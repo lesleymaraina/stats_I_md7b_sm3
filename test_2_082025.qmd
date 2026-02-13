@@ -1,0 +1,665 @@
+---
+title: "Likelihood-Based Regression for Nominal Categorical Outcomes"
+author: "<br><br><span style='font-size:25px;'><strong>Lesley Chapman Hannah, Ph.D., M.S.</strong></span><br>College of Graduate Studies<br>Northeast Ohio Medical University"
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    # incremental: true
+    chalkboard: true
+    transition: fade
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+```{r}
+#| label: setup
+#| include: false
+set.seed(29)
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(broom)
+  library(scales)
+  library(nnet)     # multinom()
+  # NOTE: we do NOT attach MASS to avoid masking dplyr::select()
+})
+
+theme_set(theme_minimal(base_size = 18))
+```
+
+
+### Recap: Approaches for Categorical Data Analysis
+
+<div style="font-size:0.7em">
+
+- categorical data analysis models probabilities of category membership or counts of category memberships
+
+- categorical outcomes are modeled through probability models and likelihood 
+
+- categorical data analysis is the set of methods used when the outcome is discrete:
+
+  - **Binary**: Yes/No [logistic regression]
+  - **Nominal**: 3+ categories with no ordering [multinomial regression]
+  - **Ordinal**: ordered categories [ordinal logistic regression]
+  - **Counts in table cells**: contingency tables [log-linear models]
+
+</div>
+
+---
+
+### Recap: Approaches for Categorical Data Analysis
+
+<div style="font-size:0.7em">
+
+Categorical data analysis involves estimating the following with likelihood as the unifying strategy:
+
+- probabilities of category membership
+- counts of category memberships
+
+Discuss two model families:
+
+- ordinal outcome [ordered categories] $\rightarrow$ ordinal logistic regression
+- counts in table cells [contingency tables] $\rightarrow$ log-linear models
+
+</div>
+
+---
+
+### Recap: Multinomial Regression
+
+<div style="font-size:0.7em">
+
+Multinomial regression applies when outcome categories have no natural ordering
+
+Multinomial regression allows you to:
+
+  - estimate adjusted probabilities for each outcome category
+  - quantify how predictors shift the probability distribution
+  - perform likelihood-based inference for categorical outcomes
+  - model complex biomedical endpoints with multiple outcome states
+
+</div>
+
+---
+
+### Recap: Multinomial Regression
+
+<div style="font-size:0.7em">
+
+- multinomial regression is used when outcome categories have no natural ordering
+- many biomedical outcomes have meaningful ordering such as:
+
+  - toxicity grade [None, Mild, Moderate, Severe]
+  - tumor stage [I, II, III, IV]
+  - variant classification [Benign, Likely benign, VUS, Likely pathogenic, Pathogenic]
+
+- **ordinal categorical models**: incorporate ordered structure of outcomes
+
+- **log-linear models**: 
+  - many categorical datasets arise as counts in contingency tables, where the goal is to model relationships between categorical variables directly
+  - models expected cell counts using likelihood-based probability models
+</div>
+
+---
+
+### Additional categorical models
+
+<div style="font-size:0.7em">
+
+**Ordinal categorical models**
+
+- models that account for the natural ordering of outcome categories and estimate how predictors shift probabilities across ordered outcome levels
+
+**Log-linear models**
+
+- models describe relationships among categorical variables by modeling expected cell counts in contingency tables using multinomial and Poisson likelihoods
+
+</div>
+
+---
+
+## Ordinal categorical models
+
+---
+
+### Ordinal categorical outcomes
+
+<div style="font-size:0.7em">
+
+- ordinal regression: models the probability that an observation falls at or below each ordered category, as a function of predictors
+
+- ordinal regression is used to model multiple ordered categories
+
+- model uses the ordering of categories to improve efficiency and interpretability
+
+- model shows how predictors shift probability toward higher or lower outcome categories
+
+- ordinal outcomes are found in biological and clinical states often progress through ordered stages
+
+- ordinal outcome has a natural ordering:
+
+  - toxicity grade (0,1,2,3,4)
+  - ordered response (PD < SD < PR < CR)
+  - symptom severity: none < mild < moderate < severe
+
+</div>
+
+---
+
+### Ordinal categorical outcomes
+
+<div style="font-size:0.7em">
+
+- **distribution**: ordinal categorical
+- **outcome**: $Yi​∈{1,2,…,k}$
+
+with ordereing: $1<2<3<⋯<k$
+
+Examples:
+
+  - cancer stage: $Y_i∈{I,II,III,IV}$
+  - toxicity grade $Y_i∈{0,1,2,3,4}$
+
+
+</div>
+
+---
+
+### Ordinal categorical outcomes
+
+<div style="font-size:0.7em">
+
+- log-likelihood of ordinal outcome has same fundamental likelihood form as other categorical models
+
+- categorical log likelihood:
+
+$$
+\ell(\beta) = \sum_{i=1}^{n} \sum_{j=1}^{k} y_{ij} \log(p_{ij})
+$$
+- the likelihoods are the same across many categorical models but differe based on how the probabilities $p_{ij}$ are defined 
+
+- multinomial regression: probabilities are modeled independently relative to a reference
+- ordinal regression: probabilities are structured using cumulative probabilities
+  - probabilities must follow the ordering
+  - cumulative probabilities increase or descrease consistently without reversing direction
+
+</div>
+
+---
+
+### Ordinal logistic regression: Example
+
+<div style="font-size:0.7em">
+**Background**
+
+- in clinical trials, toxicity severity is commonly recorded using ordered categorical grading systems
+
+- grades represent ordered clinical states, where higher values indicate worse toxicity
+ 
+| Grade | Clinical meaning     |
+|:------|:---------------------|
+| 0     | No toxicity          |
+| 1     | Mild toxicity        |
+| 2     | Moderate toxicity    |
+| 3     | Severe toxicity      |
+
+
+</div>
+---
+
+### Ordinal logistic regression: Example
+
+> Does the drug increase toxicity severity grade (0–3), adjusting for baseline risk?
+
+research question can be answered using an ordinal regression model:
+
+  - outcome has multiple categories
+  - categories are ordered
+  - goal:  model how predictors shift the probability distribution across ordered severity levels
+
+
+---
+
+### Ordinal logistic regression: Example
+<div style="font-size:0.5em">
+**Simulated Biomedical Data**
+
+```{r, echo=FALSE}
+#| label: ordinal-data
+# Sample size
+n <- 600
+
+# Patient-level predictors
+tox <- tibble(
+  treatment = factor(sample(c("Control","Drug"), n, replace = TRUE)),
+  baseline_risk = rnorm(n)
+)
+
+# Latent toxicity severity scale (continuous biological severity)
+latent <- -0.1 +
+  0.8*(tox$treatment=="Drug") +
+  1.0*tox$baseline_risk +
+  rlogis(n)
+
+# Thresholds defining toxicity grade boundaries
+cuts <- c(-0.7, 0.3, 1.2)
+
+# Convert latent severity into ordinal toxicity grade
+tox <- tox |>
+  mutate(
+    tox_grade = cut(
+      latent,
+      breaks = c(-Inf, cuts, Inf),
+      labels = c(0,1,2,3),
+      ordered_result = TRUE
+    )
+  )
+
+# Distribution of toxicity grades
+#tox |>
+#  count(tox_grade) |>
+#  mutate(prop = percent(n/sum(n)))
+
+```
+
+```{r}
+head(tox)
+```
+
+- `treatment`: label to determine whether patient recieved a drug or not
+- `baseline_risk`: number representing how likely the patient was to experience toxicity before treatment
+- `tox_grade`: toxicity severity within the patient [outcome]
+</div>
+---
+
+### Ordinal logistic regression: Example
+<div style="font-size:0.5em">
+
+- model estimates how treatment and baseline risk shift the probability distribution across toxicity grades
+
+- instead of modeling each category separately $\rightarrow$ the ordinal model estimates cumulative probabilities
+
+- each patient has their own probability distribution across toxicity grades: $P(Y∣treatment,baseline_risk)$
+```{r}
+#| label: ordinal-fit45
+fit_ord0 <- MASS::polr(tox_grade ~ 1, data = tox, Hess = TRUE)
+fit_ord1 <- MASS::polr(tox_grade ~ treatment + baseline_risk, data = tox, Hess = TRUE)
+
+summary(fit_ord1)
+```
+</div>
+---
+
+### Ordinal logistic regression: Example
+<div style="font-size:0.5em">
+
+```{r}
+#| label: ordinal-fit99
+fit_ord0 <- MASS::polr(tox_grade ~ 1, data = tox, Hess = TRUE)
+fit_ord1 <- MASS::polr(tox_grade ~ treatment + baseline_risk, data = tox, Hess = TRUE)
+
+summary(fit_ord1)
+```
+
+**Intercept**
+
+- defines boundaries on the underlying severity scale where each intercept [i.e.: 0|1] is a threshold separating adjacent toxicity grades
+- ordinal regression models how predictors change the probability of being at or below each toxicity grade
+
+$$
+\log\left(\frac{P(Y \le j)}{P(Y>j)}\right) = \alpha_j - \beta_1 \cdot \text{treatment} - \beta_2 \cdot \text{baseline_risk}
+$$
+
+
+
+</div>
+---
+
+### Ordinal logistic regression: Example
+<div style="font-size:0.5em">
+
+```{r}
+#| label: ordinal-fit96122
+fit_ord0 <- MASS::polr(tox_grade ~ 1, data = tox, Hess = TRUE)
+fit_ord1 <- MASS::polr(tox_grade ~ treatment + baseline_risk, data = tox, Hess = TRUE)
+
+summary(fit_ord1)
+```
+
+**Intercept**
+
+For each intercept, since ordinal logistic regression estimates log-odds and in order to determine the percentage of patients expected to fall within each grade range the inverse logit function (logistic function) can be used to find this percentage:
+
+$$
+P = \frac{1}{1 + e^{-x_1}}
+$$
+
+
+where X: threshold parameter
+
+</div>
+---
+
+
+### Ordinal logistic regression: Example
+<div style="font-size:0.5em">
+
+```{r}
+#| label: ordinal-fit96124
+fit_ord0 <- MASS::polr(tox_grade ~ 1, data = tox, Hess = TRUE)
+fit_ord1 <- MASS::polr(tox_grade ~ treatment + baseline_risk, data = tox, Hess = TRUE)
+
+summary(fit_ord1)
+```
+
+
+**0|1 = −0.5003**
+
+- defines boundary between: Grade 0 and Grades 1, 2, 3
+  - determines baseline probability of having any toxicity vs none
+
+$$
+P(Y \le 0) = \frac{1}{1 + e^{0.5003}} \approx 0.377
+$$
+
+Interpretation: when treatment = Control and baseline_risk = 0, 37.7% of patients are expected to have Grade 0 toxicity
+
+</div>
+---
+
+### Ordinal logistic regression: Example
+<div style="font-size:0.5em">
+
+```{r}
+#| label: ordinal-fit9611
+fit_ord0 <- MASS::polr(tox_grade ~ 1, data = tox, Hess = TRUE)
+fit_ord1 <- MASS::polr(tox_grade ~ treatment + baseline_risk, data = tox, Hess = TRUE)
+
+summary(fit_ord1)
+```
+
+
+**1|2 = 0.4628**
+
+- defines boundary between: Grades 0,1 and Grades 2, 3
+  - separates mild vs moderate/severe toxicity
+
+$$
+P(Y \le 1) = \frac{1}{1 + e^{-(-0.4628)}} \approx 0.614
+$$
+
+
+Interpretation: 61.4% of patients are expected to have Grade 0 or Grade 1 toxicity
+
+</div>
+---
+
+### Ordinal logistic regression: Example
+<div style="font-size:0.5em">
+
+```{r}
+#| label: ordinal-fit967
+fit_ord0 <- MASS::polr(tox_grade ~ 1, data = tox, Hess = TRUE)
+fit_ord1 <- MASS::polr(tox_grade ~ treatment + baseline_risk, data = tox, Hess = TRUE)
+
+summary(fit_ord1)
+```
+
+**2|3 = 1.3729**
+
+- defines boundary between: Grades 0,1,2 and Grades 3
+  - separates severe toxicity from all lower grades
+
+$$
+P(Y \le 2) = \frac{1}{1 + e^{-1.37291}} \approx 0.798
+$$
+
+
+Interpretation: 79.8% of patients are expected to have Grade 0, 1, or 2 toxicity
+
+- about 20.2% have severe toxicity: $P(Y=3)=1−0.798=0.202$
+
+</div>
+---
+
+
+## Log-linear Models
+
+---
+
+### Log-linear model: Definition
+
+<div style="font-size:0.7em">
+
+- logistic regression is a special case of log-linear models where both are likelihood-based and categorical data models, but log-linear models model counts and logistic regression models probabilities of outcomes
+- log-linear model is a likelihood-based model used to analyze contingency tables by modeling the expected counts and describing independence or association among categorical variables
+
+</div>
+
+---
+
+
+### Log-linear model: Example
+
+<div style="font-size:0.7em">
+
+**Research question**:
+
+> Is TP53 mutation status associated with 1-year survival in a rare cancer cohort?
+
+**Expected Outcomes**
+
+- `If associated`: the survival distribution differs between TP53 Mutated vs Wildtype.
+
+- `If independent`: survival proportions are the same across TP53 groups (differences are just sampling noise).
+
+**Key Variables in Simulated Data**
+
+- **TP53** [categorical predictor]: "Mutated" vs "Wildtype"
+- **survival** [categorical outcome]: "Alive" vs "Deceased"
+- **n** [count]: number of patients in each TP53 × Survival combination (cell count)
+
+
+
+
+</div>
+
+---
+
+### Log-linear model: Approach
+
+<div style="font-size:0.7em">
+
+**Log-linear model**
+
+- log-linear models estimate the expected count in each cell of a contingency table: $μ_{ij}=E[n_{ij}]$
+- models expected counts on the log scale: $log(μ_{ij})$=(main effects)+(interaction)
+- main effects: 
+  - overall frequency of each category
+  - model: $log(μ_{ij})=λ+λ_i^{TP53}+λ_j^{Survival}$
+- interaction: 
+  - association between variables
+  - model: $log(μ_{ij})=λ+λ_i{TP53}+λ_j^{Survival}+λ_{ij}^{TP53:Survival}$ 
+  - answers: Does survival depend on TP53 status?
+
+
+</div>
+
+---
+
+### Log-linear model: Code Example
+
+<div style="font-size:0.7em">
+
+**Starting dataset**
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+})
+
+# Example data: rare cancer cohort (2x2 table)
+dat <- tribble(
+  ~TP53,      ~Survival,   ~n,
+  "Mutated",  "Alive",      2,
+  "Mutated",  "Deceased",   6,
+  "Wildtype", "Alive",      8,
+  "Wildtype", "Deceased",   4
+) |>
+  mutate(
+    TP53 = factor(TP53),
+    Survival = factor(Survival)
+  )
+
+dat
+
+```
+
+
+</div>
+
+---
+
+### Log-linear model: Code Example
+
+<div style="font-size:0.7em">
+
+**Contingency Table**
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+})
+
+# Example data: rare cancer cohort (2x2 table)
+dat <- tribble(
+  ~TP53,      ~Survival,   ~n,
+  "Mutated",  "Alive",      2,
+  "Mutated",  "Deceased",   6,
+  "Wildtype", "Alive",      8,
+  "Wildtype", "Deceased",   4
+) |>
+  mutate(
+    TP53 = factor(TP53),
+    Survival = factor(Survival)
+  )
+
+# View as a contingency table
+xtabs(n ~ TP53 + Survival, data = dat)
+
+```
+
+
+</div>
+
+---
+
+### Log-linear model: Code Example
+
+<div style="font-size:0.5em">
+
+**Fit independence model**
+
+- Poisson model is used because counts follow Poisson distribution: $n_{ij}∼Poisson(μ_{ij})$
+
+- model equation: $\log(\mu_{ij}) = \lambda + \lambda_i^{TP53} + \lambda_j^{Survival}$
+
+- Model includes the following:
+  - overall TP53 frequencies
+  - overall survival frequencies
+  - no association between TP53 and survival shown in this model
+
+```{r}
+# Fit log-linear models as Poisson GLMs
+# Independence (no association)
+fit_ind <- glm(n ~ TP53 + Survival, family = poisson(), data = dat)
+
+```
+</div>
+---
+
+
+
+### Log-linear model: Code Example
+
+<div style="font-size:0.5em">
+
+**Fit association model**
+
+- model : $\log(\mu_{ij}) = \lambda + \lambda_i^{TP53} + \lambda_j^{Survival} + \lambda_{ij}^{TP53:Survival}$
+
+- expected counts can depend on interaction
+- survival probability can differ by TP53 status
+
+```{r}
+# Association (adds interaction)
+fit_assoc <- glm(n ~ TP53 * Survival, family = poisson(), data = dat)
+```
+</div>
+---
+
+
+### Log-linear model: Code Example
+
+<div style="font-size:0.5em">
+
+- use likelihood ratio test to compare the two models
+- compares two models:
+  - Model 1: independence
+  - Model 2: association
+
+This tests: 
+
+$H_0$:TP53 and survival are independent
+$H_A$::TP53 and survival are associated
+
+```{r}
+# Likelihood ratio test: does interaction help?
+anova(fit_ind, fit_assoc, test = "Chisq")
+
+```
+
+- measure of how far model is from perfect fit
+- likelihood ratio test statistic, shows improvement in fit when interaction is added: 3.4522
+- probability of seeing this much improvement if independence were true: $p=0.063$
+
+</div>
+---
+
+
+### Log-linear model: Code Example
+
+<div style="font-size:0.5em">
+
+
+- compare observed vs expected counts
+- find: 
+  - expected counts under independence
+  - expected counts under association
+
+```{r}
+
+# Compare observed vs expected counts under each model
+dat_out <- dat |>
+  mutate(
+    expected_ind   = fitted(fit_ind),
+    expected_assoc = fitted(fit_assoc),
+    pearson_resid_ind = residuals(fit_ind, type = "pearson")
+  )
+
+dat_out
+```
+
+Interpretation:
+
+  - *TP53* Mutated patients have fewer survivors and more deaths
+  - wildtype patients have more survivors and fewer deaths
+  - pattern suggests a possible association between *TP53* mutation and worse survival
+  - likelihood ratio test p-value (0.063) indicates that this evidence is not statistically significant at the 0.05 level
+
+</div>
+---
+
+
