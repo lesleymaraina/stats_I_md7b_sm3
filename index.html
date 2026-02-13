@@ -10,7 +10,7 @@
   <meta name="generator" content="quarto-1.7.33">
 
   <meta name="author" content=" Lesley Chapman Hannah, Ph.D., M.S. College of Graduate Studies Northeast Ohio Medical University">
-  <title>Modeling Binary Categorical Outcomes with Logistic Regression</title>
+  <title>Likelihood-Based Regression for Categorical Outcomes</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -195,7 +195,7 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h2 style="color: #2A76DD;" class="title">Modeling Binary Categorical Outcomes with Logistic Regression</h2>
+  <h2 style="color: #2A76DD;" class="title">Likelihood-Based Regression for Categorical Outcomes</h2>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
@@ -208,356 +208,707 @@
 </section>
 <section class="slide level2">
 
-<h3 id="section"></h3>
-<h3 id="binary-outcomes-a-review">Binary Outcomes: A Review</h3>
+<h3 id="recap-approaches-for-categorical-data-analysis">Recap: Approaches for Categorical Data Analysis</h3>
 <div style="font-size:0.7em">
 <ul>
-<li><strong>binary outcome</strong>: categorical random variable that takes two values</li>
-<li>with binary outcomes typically testing the <strong>probability of the event</strong> in a population or subgroup</li>
+<li><p>categorical data analysis models probabilities of category membership or counts of category memberships</p></li>
+<li><p>categorical outcomes are modeled through probability models and likelihood</p></li>
+<li><p>categorical data analysis is the set of methods used when the outcome is discrete:</p>
+<ul>
+<li><strong>Binary</strong>: Yes/No [logistic regression]</li>
+<li><strong>Nominal</strong>: 3+ categories with no ordering [multinomial regression]</li>
+<li><strong>Ordinal</strong>: ordered categories [ordinal logistic regression]</li>
+<li><strong>Counts in table cells</strong>: contingency tables <a href="#/log-linear-models">log-linear models</a></li>
+</ul></li>
 </ul>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="recap-approaches-for-categorical-data-analysis-1">Recap: Approaches for Categorical Data Analysis</h3>
+<div style="font-size:0.7em">
+<p>Categorical data analysis involves estimating the following with likelihood as the unifying strategy:</p>
+<ul>
+<li>probabilities of category membership</li>
+<li>counts of category memberships</li>
+</ul>
+<p>Discuss two model families:</p>
+<ul>
+<li>ordinal outcome [ordered categories] <span class="math inline">\(\rightarrow\)</span> ordinal logistic regression</li>
+<li>counts in table cells [contingency tables] <span class="math inline">\(\rightarrow\)</span> log-linear models</li>
+</ul>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="recap-multinomial-regression">Recap: Multinomial Regression</h3>
+<div style="font-size:0.7em">
+<p>Multinomial regression applies when outcome categories have no natural ordering</p>
+<p>Multinomial regression allows you to:</p>
+<ul>
+<li>estimate adjusted probabilities for each outcome category</li>
+<li>quantify how predictors shift the probability distribution</li>
+<li>perform likelihood-based inference for categorical outcomes</li>
+<li>model complex biomedical endpoints with multiple outcome states</li>
+</ul>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="recap-multinomial-regression-1">Recap: Multinomial Regression</h3>
+<div style="font-size:0.7em">
+<ul>
+<li><p>multinomial regression is used when outcome categories have no natural ordering</p></li>
+<li><p>many biomedical outcomes have meaningful ordering such as:</p>
+<ul>
+<li>toxicity grade [None, Mild, Moderate, Severe]</li>
+<li>tumor stage [I, II, III, IV]</li>
+<li>variant classification [Benign, Likely benign, VUS, Likely pathogenic, Pathogenic]</li>
+</ul></li>
+<li><p><strong>ordinal categorical models</strong>: incorporate ordered structure of outcomes</p></li>
+<li><p><strong>log-linear models</strong>:</p>
+<ul>
+<li>many categorical datasets arise as counts in contingency tables, where the goal is to model relationships between categorical variables directly</li>
+<li>models expected cell counts using likelihood-based probability models</li>
+</ul></li>
+</ul>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="additional-categorical-models">Additional categorical models</h3>
+<div style="font-size:0.7em">
+<p><strong>Ordinal categorical models</strong></p>
+<ul>
+<li>models that account for the natural ordering of outcome categories and estimate how predictors shift probabilities across ordered outcome levels</li>
+</ul>
+<p><strong>Log-linear models</strong></p>
+<ul>
+<li>models describe relationships among categorical variables by modeling expected cell counts in contingency tables using multinomial and Poisson likelihoods</li>
+</ul>
+</div>
+</section>
+<section id="ordinal-categorical-models" class="slide level2">
+<h2>Ordinal categorical models</h2>
+</section>
+<section class="slide level2">
+
+<h3 id="ordinal-categorical-outcomes">Ordinal categorical outcomes</h3>
+<div style="font-size:0.7em">
+<ul>
+<li><p>ordinal regression: models the probability that an observation falls at or below each ordered category, as a function of predictors</p></li>
+<li><p>ordinal regression is used to model multiple ordered categories</p></li>
+<li><p>model uses the ordering of categories to improve efficiency and interpretability</p></li>
+<li><p>model shows how predictors shift probability toward higher or lower outcome categories</p></li>
+<li><p>ordinal outcomes are found in biological and clinical states often progress through ordered stages</p></li>
+<li><p>ordinal outcome has a natural ordering:</p>
+<ul>
+<li>toxicity grade (0,1,2,3,4)</li>
+<li>ordered response (PD &lt; SD &lt; PR &lt; CR)</li>
+<li>symptom severity: none &lt; mild &lt; moderate &lt; severe</li>
+</ul></li>
+</ul>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="ordinal-categorical-outcomes-1">Ordinal categorical outcomes</h3>
+<div style="font-size:0.7em">
+<ul>
+<li><strong>distribution</strong>: ordinal categorical</li>
+<li><strong>outcome</strong>: <span class="math inline">\(Yi​∈{1,2,…,k}\)</span></li>
+</ul>
+<p>with ordereing: <span class="math inline">\(1&lt;2&lt;3&lt;⋯&lt;k\)</span></p>
 <p>Examples:</p>
 <ul>
-<li>Treatment response [Yes / No]</li>
-<li>Mutation [present / absent]</li>
-<li>Adverse event [Present / Absent]</li>
+<li>cancer stage: <span class="math inline">\(Y_i∈{I,II,III,IV}\)</span></li>
+<li>toxicity grade <span class="math inline">\(Y_i∈{0,1,2,3,4}\)</span></li>
 </ul>
 </div>
 </section>
 <section class="slide level2">
 
-<h3 id="binary-outcomes-a-review-1">Binary Outcomes: A Review</h3>
+<h3 id="ordinal-categorical-outcomes-2">Ordinal categorical outcomes</h3>
 <div style="font-size:0.7em">
-<p>Binary outcome:</p>
+<ul>
+<li><p>log-likelihood of ordinal outcome has same fundamental likelihood form as other categorical models</p></li>
+<li><p>categorical log likelihood:</p></li>
+</ul>
 <p><span class="math display">\[
-Y \in \{0, 1\}
-\]</span></p>
-<p>and for a given predictor profile <span class="math inline">\(X\)</span>:</p>
-<p><span class="math display">\[
-P(Y = 1 \mid X) = p(X)
-\]</span></p>
-<p>Interpretation:</p>
+\ell(\beta) = \sum_{i=1}^{n} \sum_{j=1}^{k} y_{ij} \log(p_{ij})
+\]</span> - the likelihoods are the same across many categorical models but differe based on how the probabilities <span class="math inline">\(p_{ij}\)</span> are defined</p>
 <ul>
-<li>each patient in <span class="math inline">\(X\)</span> has an underlying probability of response</li>
-<li>predictors shift that probability</li>
-<li>logistic regression is a model for estimating <span class="math inline">\(p(X)\)</span> in categorical data analysis</li>
-</ul>
-</div>
-</section>
-<section id="review-contingency-tables" class="slide level2">
-<h2>Review: Contingency Tables</h2>
+<li>multinomial regression: probabilities are modeled independently relative to a reference</li>
+<li>ordinal regression: probabilities are structured using cumulative probabilities
 <ul>
-<li><strong>contingency table</strong> : structured summary of counts for two categorical variables</li>
-</ul>
-<p>Contingency tables have two key roles in categorical data analysis:</p>
-<ol type="1">
-<li><strong>Descriptive</strong>: summarizes the joint distribution of two categorical variables</li>
-<li><strong>Probabilistic</strong>: provides empirical estimates of probabilities via proportions</li>
-</ol>
-</section>
-<section id="review-contingency-tables-1" class="slide level2">
-<h2>Review: Contingency Tables</h2>
-<ul>
-<li><p><strong>contingency table</strong> : structured summary of counts for two categorical variables</p></li>
-<li><p>provides empirical estimates of probability distributions</p></li>
-<li><p>represents observed realization of multinomial random variable</p></li>
-<li><p>helps form basis for probability modeling</p></li>
-</ul>
-</section>
-<section id="review-contingency-tables-2" class="slide level2">
-<h2>Review: Contingency Tables</h2>
-<p>A contingency table estimates empirical probabilities:</p>
-<p><span class="math display">\[
-\hat{P}(Y=i \mid X=j) = \frac{O_{ij}}{\sum_i O_{ij}}
-\]</span></p>
-<p>Where:</p>
-<ul>
-<li><span class="math inline">\(O_{ij}\)</span>: observed count in category <span class="math inline">\(i\)</span> and group <span class="math inline">\(j\)</span><br>
-</li>
-<li>Estimates conditional probability directly from observed data</li>
-</ul>
-<p>Probabilities describe how biological outcomes differ across groups</p>
-</section>
-<section class="slide level2">
-
-<h3 id="contingency-tables-and-probability-estimation-example">Contingency tables and probability estimation: example</h3>
-<div style="font-size:0.7em">
-<p><strong>Question and Background</strong>:</p>
-<p>You’re conducting a study that compares tumor response between two treatment groups and you want to determine:</p>
-<p>Does the new drug increase tumor response?</p>
-<p><strong>Variables of interest</strong>:</p>
-<ul>
-<li>Control: standard therapy</li>
-<li>Drug: new investigational therapy</li>
-<li>Outcome: Tumor response at 12 weeks (Yes / No)</li>
+<li>probabilities must follow the ordering</li>
+<li>cumulative probabilities increase or descrease consistently without reversing direction</li>
+</ul></li>
 </ul>
 </div>
 </section>
 <section class="slide level2">
 
-<h3 id="contingency-tables-and-probability-estimation-example-1">Contingency tables and probability estimation: example</h3>
+<h3 id="ordinal-logistic-regression-example">Ordinal logistic regression: Example</h3>
 <div style="font-size:0.7em">
-<p><strong>Research Question</strong>:</p>
-<p>Does the new drug increase the probability of response?</p>
+<p><strong>Background</strong></p>
+<ul>
+<li><p>in clinical trials, toxicity severity is commonly recorded using ordered categorical grading systems</p></li>
+<li><p>grades represent ordered clinical states, where higher values indicate worse toxicity</p></li>
+</ul>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Grade</th>
+<th style="text-align: left;">Clinical meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">No toxicity</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Mild toxicity</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Moderate toxicity</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Severe toxicity</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="ordinal-logistic-regression-example-1">Ordinal logistic regression: Example</h3>
+<blockquote>
+<p>Does the drug increase toxicity severity grade (0–3), adjusting for baseline risk?</p>
+</blockquote>
+<p>research question can be answered using an ordinal regression model:</p>
+<ul>
+<li>outcome has multiple categories</li>
+<li>categories are ordered</li>
+<li>goal: model how predictors shift the probability distribution across ordered severity levels</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="ordinal-logistic-regression-example-2">Ordinal logistic regression: Example</h3>
+<div style="font-size:0.5em">
+<p><strong>Simulated Biomedical Data</strong></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a>tab <span class="ot">&lt;-</span> <span class="fu">table</span>(dat<span class="sc">$</span>drug, dat<span class="sc">$</span>response)</span>
-<span id="cb1-2"><a href=""></a>tab</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a><span class="fu">head</span>(tox)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>         
-          No Yes
-  Control 90  55
-  Drug    88  67</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href=""></a><span class="fu">prop.table</span>(tab, <span class="at">margin =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>         
-                 No       Yes
-  Control 0.6206897 0.3793103
-  Drug    0.5677419 0.4322581</code></pre>
+<pre><code># A tibble: 6 × 3
+  treatment baseline_risk tox_grade
+  &lt;fct&gt;             &lt;dbl&gt; &lt;ord&gt;    
+1 Control          -0.170 2        
+2 Drug             -0.413 3        
+3 Control          -0.269 0        
+4 Drug             -0.201 0        
+5 Drug              1.32  3        
+6 Control           0.329 1        </code></pre>
 </div>
 </div>
-<p>Interpretation:</p>
 <ul>
-<li>each row is an empirical estimate of the conditional distribution <span class="math inline">\(P(\text{Response} \mid \text{Treatment [Yes+No]})\)</span></li>
-<li>estimates <span class="math inline">\(P(\text{Yes} \mid \text{Control})\)</span> and <span class="math inline">\(P(\text{Yes} \mid \text{Drug})\)</span></li>
-<li>about 37.9% of patients in the Control group responded to treatment</li>
-<li>about 43.2% of patients in the Drug group responded</li>
+<li><code>treatment</code>: label to determine whether patient recieved a drug or not</li>
+<li><code>baseline_risk</code>: number representing how likely the patient was to experience toxicity before treatment</li>
+<li><code>tox_grade</code>: toxicity severity within the patient [outcome]</li>
 </ul>
 </div>
 </section>
 <section class="slide level2">
 
-</section>
-<section>
-<section id="contingency-table-limitations-and-logistic-regression-as-an-alternative" class="title-slide slide level1 center">
-<h1>Contingency table limitations and logistic regression as an alternative</h2>
-
-</section>
-<section id="limitation-continuous-predictors-do-not-fit-naturally-in-tables" class="slide level2">
-<h2>Limitation: continuous predictors do not fit naturally in tables</h2>
+<h3 id="ordinal-logistic-regression-example-3">Ordinal logistic regression: Example</h3>
+<div style="font-size:0.5em">
 <ul>
-<li>even thought the outcome is categorical [binary] many research studies include continuous predictors [biomarkers, lab values, scores]</li>
+<li><p>model estimates how treatment and baseline risk shift the probability distribution across toxicity grades</p></li>
+<li><p>instead of modeling each category separately <span class="math inline">\(\rightarrow\)</span> the ordinal model estimates cumulative probabilities</p></li>
+<li><p>each patient has their own probability distribution across toxicity grades: <span class="math inline">\(P(Y∣treatment,baseline_risk)\)</span></p></li>
 </ul>
-<p>When using a table:</p>
-<ul>
-<li><p>continuous features would need to be binned</p></li>
-<li><p>bin-choice sensitivity could lead to infomration loss</p></li>
-<li><p>logistic regression allows one to keep continuous predictors and models how response probability changes across its range</p></li>
-</ul>
-</section>
-<section id="limitation-tables-can-compare-groups-one-factor-at-a-time" class="slide level2">
-<h2>Limitation: Tables can compare groups one factor at a time</h2>
-<p>Biomedical inference often needs adjustment:</p>
-<ul>
-<li>baseline risk differs by features included in the model or table [i.e.: biomarker, age, stage]</li>
-</ul>
-<p>Logistic regression estimates treatment effect while accounting for other predictors</p>
-</section>
-<section id="limitation-tables-estimate-group-specific-probabilities" class="slide level2">
-<h2>Limitation: tables estimate group-specific probabilities</h2>
-<ul>
-<li>2×2 table gives separate estimates per group</li>
-</ul>
-<p>Logistic regression provides a probability model that can:</p>
-<ul>
-<li>estimate effects (odds ratios) for each feature included within the model</li>
-<li>support formal model comparison (nested models)</li>
-</ul>
-</section>
-<section class="slide level2">
-
-<h3 id="two-way-contingency-table">Two-way contingency table</h3>
-<p><strong>Predictor</strong>: Treatment<br>
-<strong>Outcome</strong>: Response</p>
-<p>Two-way tables are used to estimate conditional probabilities:</p>
-<p><span class="math display">\[
-\hat{P}(\text{Response} = \text{Yes} \mid \text{Treatment} = \text{Control})
-\]</span></p>
-<p><span class="math display">\[
-\hat{P}(\text{Response} = \text{Yes} \mid \text{Treatment} = \text{Drug})
-\]</span></p>
-</section>
-<section class="slide level2">
-
-<h3 id="logistic-regression-models-these-probabilities">Logistic regression models these probabilities</h3>
-<div style="font-size:0.7em">
-<p>Logistic regression models conditional probability:</p>
-<p><span class="math display">\[
-P(Y=1 \mid X)
-\]</span></p>
-<p>Using log odds:</p>
-<p><span class="math display">\[
-\log\left(\frac{P(Y=1)}{1 - P(Y=1)}\right) = X\beta
-\]</span></p>
-</div>
-</section>
-<section class="slide level2">
-
-<h3 id="logistic-regression-estimation-of-probability-of-drug-response">Logistic regression estimation of probability of drug response</h3>
-<div style="font-size:0.7em">
-<p>Recap: Does the new drug increase the probability of response?</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href=""></a>fit_simple <span class="ot">&lt;-</span> <span class="fu">glm</span>(response <span class="sc">~</span> drug, <span class="at">data =</span> dat, <span class="at">family =</span> <span class="fu">binomial</span>())</span>
-<span id="cb5-2"><a href=""></a></span>
-<span id="cb5-3"><a href=""></a>broom<span class="sc">::</span><span class="fu">tidy</span>(fit_simple, <span class="at">exponentiate =</span> <span class="cn">TRUE</span>, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href=""></a>fit_ord0 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-2"><a href=""></a>fit_ord1 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> treatment <span class="sc">+</span> baseline_risk, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-3"><a href=""></a></span>
+<span id="cb3-4"><a href=""></a><span class="fu">summary</span>(fit_ord1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 2 × 7
-  term        estimate std.error statistic p.value conf.low conf.high
-  &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 (Intercept)    0.611     0.171    -2.88  0.00401    0.435     0.851
-2 drugDrug       1.25      0.236     0.932 0.351      0.785     1.98 </code></pre>
-</div>
-</div>
-</div>
-</section>
-<section class="slide level2">
-
-<h3 id="logistic-regression-estimation-of-probability-of-drug-response-1">Logistic regression estimation of probability of drug response</h3>
-<div style="font-size:0.7em">
-<p>Contingency table probability of response given treatment:</p>
-<p>Control: <span class="math inline">\(P(Yes∣Control)=0.379\)</span></p>
-<p>Drug: <span class="math inline">\(P(Yes∣Drug)=0.432\)</span></p>
-<p>Logistic regression generates odds ratio: 1.25</p>
-</div>
-</section>
-<section class="slide level2">
-
-<h3 id="logistic-regression-estimation-of-probability-of-drug-response-2">Logistic regression estimation of probability of drug response</h3>
-<div style="font-size:0.7em">
-<p>Contingency table probabilities can be converted into odds</p>
-<p>Probability: <span class="math inline">\(p=P(Y=1)\)</span></p>
-<p>Odds: <span class="math inline">\(odds=\frac{p}{1-p}\)</span></p>
-<p>Control probability: <span class="math inline">\(p=0.379\)</span></p>
-<p>Control odds: <span class="math inline">\(\frac{0.39}{1-0.379}=0.611\)</span></p>
-<p>Drug probability: <span class="math inline">\(p=0.432\)</span></p>
-<p>Drug odds: <span class="math inline">\(\frac{0.432}{1-0.432}=0.761\)</span></p>
-<p>Odds ratio : <span class="math inline">\(\frac{0.761}{0.611} = 1.25\)</span></p>
-<p>Interpretation:</p>
-<ul>
-<li>logistic regression shows odds ratios and when contingency table values are converted to odds, the ratio of the odds is the same as the coefficient estimate generated by logistic regression</li>
-<li>logistic regression also generates a corresponding standard error and p-value</li>
-</ul>
-</div>
-</section>
-<section id="logistic-regression-enables-multivariable-categorical-analysis" class="slide level2">
-<h2>Logistic regression enables multivariable categorical analysis</h2>
-<div style="font-size:0.7em">
-<ul>
-<li>one may choose to model multiple predictors simultaneously versus a binary outcome</li>
-</ul>
-<p>Examples include:</p>
-<ul>
-<li><p>treatment</p></li>
-<li><p>biomarker level</p></li>
-<li><p>age</p></li>
-<li><p>disease stage</p></li>
-<li><p>contingency tables cannot easily represent multiple predictors simultaneously</p></li>
-<li><p>logistic regression models outcome probability while accounting for multiple predictors</p></li>
-</ul>
-</div>
-</section>
-<section class="slide level2">
-
-<h3 id="biomedical-example-logistic-regression-with-multiple-predictors">Biomedical example: logistic regression with multiple predictors</h3>
-<div style="font-size:0.55em">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href=""></a>fit <span class="ot">&lt;-</span> <span class="fu">glm</span>(response <span class="sc">~</span> drug <span class="sc">+</span> biomarker, <span class="at">data =</span> dat, <span class="at">family =</span> <span class="fu">binomial</span>())</span>
-<span id="cb7-2"><a href=""></a><span class="fu">summary</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-Call:
-glm(formula = response ~ drug + biomarker, family = binomial(), 
-    data = dat)
+<pre><code>Call:
+MASS::polr(formula = tox_grade ~ treatment + baseline_risk, data = tox, 
+    Hess = TRUE)
 
 Coefficients:
-            Estimate Std. Error z value Pr(&gt;|z|)    
-(Intercept)  -0.5027     0.1917  -2.622  0.00874 ** 
-drugDrug      0.1789     0.2659   0.673  0.50116    
-biomarker     1.0631     0.1498   7.097 1.28e-12 ***
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+               Value Std. Error t value
+treatmentDrug 0.8521    0.15799   5.394
+baseline_risk 0.9921    0.08573  11.572
 
-(Dispersion parameter for binomial family taken to be 1)
+Intercepts:
+    Value   Std. Error t value
+0|1 -0.5003  0.1214    -4.1218
+1|2  0.4628  0.1218     3.8001
+2|3  1.3729  0.1328    10.3410
 
-    Null deviance: 405.37  on 299  degrees of freedom
-Residual deviance: 334.48  on 297  degrees of freedom
-AIC: 340.48
-
-Number of Fisher Scoring iterations: 4</code></pre>
+Residual Deviance: 1430.98 
+AIC: 1440.98 </code></pre>
 </div>
 </div>
-<p>Interpretation of coefficients:</p>
-<p>Drug effect:</p>
-<p><span class="math inline">\(OR=e^{0.1789}=1.20\)</span></p>
-<ul>
-<li>Drug increases the odds of response by about 20% esult is not statistically significant (p = 0.501)</li>
-</ul>
 </div>
 </section>
 <section class="slide level2">
 
-<h3 id="biomedical-example-logistic-regression-with-multiple-predictors-1">Biomedical example: logistic regression with multiple predictors</h3>
-<div style="font-size:0.55em">
+<h3 id="ordinal-logistic-regression-example-4">Ordinal logistic regression: Example</h3>
+<div style="font-size:0.5em">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href=""></a>fit <span class="ot">&lt;-</span> <span class="fu">glm</span>(response <span class="sc">~</span> drug <span class="sc">+</span> biomarker, <span class="at">data =</span> dat, <span class="at">family =</span> <span class="fu">binomial</span>())</span>
-<span id="cb9-2"><a href=""></a><span class="fu">summary</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href=""></a>fit_ord0 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-2"><a href=""></a>fit_ord1 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> treatment <span class="sc">+</span> baseline_risk, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-3"><a href=""></a></span>
+<span id="cb5-4"><a href=""></a><span class="fu">summary</span>(fit_ord1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>
-Call:
-glm(formula = response ~ drug + biomarker, family = binomial(), 
-    data = dat)
+<pre><code>Call:
+MASS::polr(formula = tox_grade ~ treatment + baseline_risk, data = tox, 
+    Hess = TRUE)
 
 Coefficients:
-            Estimate Std. Error z value Pr(&gt;|z|)    
-(Intercept)  -0.5027     0.1917  -2.622  0.00874 ** 
-drugDrug      0.1789     0.2659   0.673  0.50116    
-biomarker     1.0631     0.1498   7.097 1.28e-12 ***
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+               Value Std. Error t value
+treatmentDrug 0.8521    0.15799   5.394
+baseline_risk 0.9921    0.08573  11.572
 
-(Dispersion parameter for binomial family taken to be 1)
+Intercepts:
+    Value   Std. Error t value
+0|1 -0.5003  0.1214    -4.1218
+1|2  0.4628  0.1218     3.8001
+2|3  1.3729  0.1328    10.3410
 
-    Null deviance: 405.37  on 299  degrees of freedom
-Residual deviance: 334.48  on 297  degrees of freedom
-AIC: 340.48
-
-Number of Fisher Scoring iterations: 4</code></pre>
+Residual Deviance: 1430.98 
+AIC: 1440.98 </code></pre>
 </div>
 </div>
-<p>Interpretation of coefficients:</p>
-<p>Biomarker:</p>
-<p><span class="math inline">\(OR=e^{1.0631}=2.90\)</span></p>
+<p><strong>Intercept</strong></p>
 <ul>
-<li>for each 1-unit increase in biomarker, odds of response increase by 190%</li>
-<li>result is statistically significant</li>
+<li>defines boundaries on the underlying severity scale where each intercept [i.e.: 0|1] is a threshold separating adjacent toxicity grades</li>
+<li>ordinal regression models how predictors change the probability of being at or below each toxicity grade</li>
 </ul>
+<p><span class="math display">\[
+\log\left(\frac{P(Y \le j)}{P(Y&gt;j)}\right) = \alpha_j - \beta_1 \cdot \text{treatment} - \beta_2 \cdot \text{baseline_risk}
+\]</span></p>
 </div>
 </section>
 <section class="slide level2">
 
-<h3 id="summary">Summary</h3>
+<h3 id="ordinal-logistic-regression-example-5">Ordinal logistic regression: Example</h3>
+<div style="font-size:0.5em">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href=""></a>fit_ord0 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-2"><a href=""></a>fit_ord1 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> treatment <span class="sc">+</span> baseline_risk, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-3"><a href=""></a></span>
+<span id="cb7-4"><a href=""></a><span class="fu">summary</span>(fit_ord1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+MASS::polr(formula = tox_grade ~ treatment + baseline_risk, data = tox, 
+    Hess = TRUE)
+
+Coefficients:
+               Value Std. Error t value
+treatmentDrug 0.8521    0.15799   5.394
+baseline_risk 0.9921    0.08573  11.572
+
+Intercepts:
+    Value   Std. Error t value
+0|1 -0.5003  0.1214    -4.1218
+1|2  0.4628  0.1218     3.8001
+2|3  1.3729  0.1328    10.3410
+
+Residual Deviance: 1430.98 
+AIC: 1440.98 </code></pre>
+</div>
+</div>
+<p><strong>Intercept</strong></p>
+<p>For each intercept, since ordinal logistic regression estimates log-odds and in order to determine the percentage of patients expected to fall within each grade range the inverse logit function (logistic function) can be used to find this percentage:</p>
+<p><span class="math display">\[
+P = \frac{1}{1 + e^{-x_1}}
+\]</span></p>
+<p>where X: threshold parameter</p>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="ordinal-logistic-regression-example-6">Ordinal logistic regression: Example</h3>
+<div style="font-size:0.5em">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href=""></a>fit_ord0 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-2"><a href=""></a>fit_ord1 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> treatment <span class="sc">+</span> baseline_risk, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-3"><a href=""></a></span>
+<span id="cb9-4"><a href=""></a><span class="fu">summary</span>(fit_ord1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+MASS::polr(formula = tox_grade ~ treatment + baseline_risk, data = tox, 
+    Hess = TRUE)
+
+Coefficients:
+               Value Std. Error t value
+treatmentDrug 0.8521    0.15799   5.394
+baseline_risk 0.9921    0.08573  11.572
+
+Intercepts:
+    Value   Std. Error t value
+0|1 -0.5003  0.1214    -4.1218
+1|2  0.4628  0.1218     3.8001
+2|3  1.3729  0.1328    10.3410
+
+Residual Deviance: 1430.98 
+AIC: 1440.98 </code></pre>
+</div>
+</div>
+<p><strong>0|1 = −0.5003</strong></p>
+<ul>
+<li>defines boundary between: Grade 0 and Grades 1, 2, 3
+<ul>
+<li>determines baseline probability of having any toxicity vs none</li>
+</ul></li>
+</ul>
+<p><span class="math display">\[
+P(Y \le 0) = \frac{1}{1 + e^{0.5003}} \approx 0.377
+\]</span></p>
+<p>Interpretation: when treatment = Control and baseline_risk = 0, 37.7% of patients are expected to have Grade 0 toxicity</p>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="ordinal-logistic-regression-example-7">Ordinal logistic regression: Example</h3>
+<div style="font-size:0.5em">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href=""></a>fit_ord0 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-2"><a href=""></a>fit_ord1 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> treatment <span class="sc">+</span> baseline_risk, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-3"><a href=""></a></span>
+<span id="cb11-4"><a href=""></a><span class="fu">summary</span>(fit_ord1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+MASS::polr(formula = tox_grade ~ treatment + baseline_risk, data = tox, 
+    Hess = TRUE)
+
+Coefficients:
+               Value Std. Error t value
+treatmentDrug 0.8521    0.15799   5.394
+baseline_risk 0.9921    0.08573  11.572
+
+Intercepts:
+    Value   Std. Error t value
+0|1 -0.5003  0.1214    -4.1218
+1|2  0.4628  0.1218     3.8001
+2|3  1.3729  0.1328    10.3410
+
+Residual Deviance: 1430.98 
+AIC: 1440.98 </code></pre>
+</div>
+</div>
+<p><strong>1|2 = 0.4628</strong></p>
+<ul>
+<li>defines boundary between: Grades 0,1 and Grades 2, 3
+<ul>
+<li>separates mild vs moderate/severe toxicity</li>
+</ul></li>
+</ul>
+<p><span class="math display">\[
+P(Y \le 1) = \frac{1}{1 + e^{-(-0.4628)}} \approx 0.614
+\]</span></p>
+<p>Interpretation: 61.4% of patients are expected to have Grade 0 or Grade 1 toxicity</p>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="ordinal-logistic-regression-example-8">Ordinal logistic regression: Example</h3>
+<div style="font-size:0.5em">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href=""></a>fit_ord0 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb13-2"><a href=""></a>fit_ord1 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(tox_grade <span class="sc">~</span> treatment <span class="sc">+</span> baseline_risk, <span class="at">data =</span> tox, <span class="at">Hess =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb13-3"><a href=""></a></span>
+<span id="cb13-4"><a href=""></a><span class="fu">summary</span>(fit_ord1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+MASS::polr(formula = tox_grade ~ treatment + baseline_risk, data = tox, 
+    Hess = TRUE)
+
+Coefficients:
+               Value Std. Error t value
+treatmentDrug 0.8521    0.15799   5.394
+baseline_risk 0.9921    0.08573  11.572
+
+Intercepts:
+    Value   Std. Error t value
+0|1 -0.5003  0.1214    -4.1218
+1|2  0.4628  0.1218     3.8001
+2|3  1.3729  0.1328    10.3410
+
+Residual Deviance: 1430.98 
+AIC: 1440.98 </code></pre>
+</div>
+</div>
+<p><strong>2|3 = 1.3729</strong></p>
+<ul>
+<li>defines boundary between: Grades 0,1,2 and Grades 3
+<ul>
+<li>separates severe toxicity from all lower grades</li>
+</ul></li>
+</ul>
+<p><span class="math display">\[
+P(Y \le 2) = \frac{1}{1 + e^{-1.37291}} \approx 0.798
+\]</span></p>
+<p>Interpretation: 79.8% of patients are expected to have Grade 0, 1, or 2 toxicity</p>
+<ul>
+<li>about 20.2% have severe toxicity: <span class="math inline">\(P(Y=3)=1−0.798=0.202\)</span></li>
+</ul>
+</div>
+</section>
+<section id="log-linear-models" class="slide level2">
+<h2>Log-linear Models</h2>
+</section>
+<section class="slide level2">
+
+<h3 id="log-linear-model-definition">Log-linear model: Definition</h3>
 <div style="font-size:0.7em">
-<p>One-way table:</p>
 <ul>
-<li>estimates marginal probability</li>
+<li>logistic regression is a special case of log-linear models where both are likelihood-based and categorical data models, but log-linear models model counts and logistic regression models probabilities of outcomes</li>
+<li>log-linear model is a likelihood-based model used to analyze contingency tables by modeling the expected counts and describing independence or association among categorical variables</li>
 </ul>
-<p>Two-way table:</p>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="log-linear-model-example">Log-linear model: Example</h3>
+<div style="font-size:0.7em">
+<p><strong>Research question</strong>:</p>
+<blockquote>
+<p>Is TP53 mutation status associated with 1-year survival in a rare cancer cohort?</p>
+</blockquote>
+<p><strong>Expected Outcomes</strong></p>
 <ul>
-<li>estimates conditional probability</li>
+<li><p><code>If associated</code>: the survival distribution differs between TP53 Mutated vs Wildtype.</p></li>
+<li><p><code>If independent</code>: survival proportions are the same across TP53 groups (differences are just sampling noise).</p></li>
 </ul>
-<p>Chi-square test:</p>
+<p><strong>Key Variables in Simulated Data</strong></p>
 <ul>
-<li>tests hypotheses about probabilities</li>
+<li><strong>TP53</strong> [categorical predictor]: “Mutated” vs “Wildtype”</li>
+<li><strong>survival</strong> [categorical outcome]: “Alive” vs “Deceased”</li>
+<li><strong>n</strong> [count]: number of patients in each TP53 × Survival combination (cell count)</li>
 </ul>
-<p>Logistic regression:</p>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="log-linear-model-approach">Log-linear model: Approach</h3>
+<div style="font-size:0.7em">
+<p><strong>Log-linear model</strong></p>
 <ul>
-<li>models probabilities as function of predictors</li>
+<li>log-linear models estimate the expected count in each cell of a contingency table: <span class="math inline">\(μ_{ij}=E[n_{ij}]\)</span></li>
+<li>models expected counts on the log scale: <span class="math inline">\(log(μ_{ij})\)</span>=(main effects)+(interaction)</li>
+<li>main effects:
+<ul>
+<li>overall frequency of each category</li>
+<li>model: <span class="math inline">\(log(μ_{ij})=λ+λ_i^{TP53}+λ_j^{Survival}\)</span></li>
+</ul></li>
+<li>interaction:
+<ul>
+<li>association between variables</li>
+<li>model: <span class="math inline">\(log(μ_{ij})=λ+λ_i{TP53}+λ_j^{Survival}+λ_{ij}^{TP53:Survival}\)</span></li>
+<li>answers: Does survival depend on TP53 status?</li>
+</ul></li>
+</ul>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="log-linear-model-code-example">Log-linear model: Code Example</h3>
+<div style="font-size:0.7em">
+<p><strong>Starting dataset</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href=""></a><span class="fu">suppressPackageStartupMessages</span>({</span>
+<span id="cb15-2"><a href=""></a>  <span class="fu">library</span>(tidyverse)</span>
+<span id="cb15-3"><a href=""></a>})</span>
+<span id="cb15-4"><a href=""></a></span>
+<span id="cb15-5"><a href=""></a><span class="co"># Example data: rare cancer cohort (2x2 table)</span></span>
+<span id="cb15-6"><a href=""></a>dat <span class="ot">&lt;-</span> <span class="fu">tribble</span>(</span>
+<span id="cb15-7"><a href=""></a>  <span class="sc">~</span>TP53,      <span class="sc">~</span>Survival,   <span class="sc">~</span>n,</span>
+<span id="cb15-8"><a href=""></a>  <span class="st">"Mutated"</span>,  <span class="st">"Alive"</span>,      <span class="dv">2</span>,</span>
+<span id="cb15-9"><a href=""></a>  <span class="st">"Mutated"</span>,  <span class="st">"Deceased"</span>,   <span class="dv">6</span>,</span>
+<span id="cb15-10"><a href=""></a>  <span class="st">"Wildtype"</span>, <span class="st">"Alive"</span>,      <span class="dv">8</span>,</span>
+<span id="cb15-11"><a href=""></a>  <span class="st">"Wildtype"</span>, <span class="st">"Deceased"</span>,   <span class="dv">4</span></span>
+<span id="cb15-12"><a href=""></a>) <span class="sc">|&gt;</span></span>
+<span id="cb15-13"><a href=""></a>  <span class="fu">mutate</span>(</span>
+<span id="cb15-14"><a href=""></a>    <span class="at">TP53 =</span> <span class="fu">factor</span>(TP53),</span>
+<span id="cb15-15"><a href=""></a>    <span class="at">Survival =</span> <span class="fu">factor</span>(Survival)</span>
+<span id="cb15-16"><a href=""></a>  )</span>
+<span id="cb15-17"><a href=""></a></span>
+<span id="cb15-18"><a href=""></a>dat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 3
+  TP53     Survival     n
+  &lt;fct&gt;    &lt;fct&gt;    &lt;dbl&gt;
+1 Mutated  Alive        2
+2 Mutated  Deceased     6
+3 Wildtype Alive        8
+4 Wildtype Deceased     4</code></pre>
+</div>
+</div>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="log-linear-model-code-example-1">Log-linear model: Code Example</h3>
+<div style="font-size:0.7em">
+<p><strong>Contingency Table</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href=""></a><span class="fu">suppressPackageStartupMessages</span>({</span>
+<span id="cb17-2"><a href=""></a>  <span class="fu">library</span>(tidyverse)</span>
+<span id="cb17-3"><a href=""></a>})</span>
+<span id="cb17-4"><a href=""></a></span>
+<span id="cb17-5"><a href=""></a><span class="co"># Example data: rare cancer cohort (2x2 table)</span></span>
+<span id="cb17-6"><a href=""></a>dat <span class="ot">&lt;-</span> <span class="fu">tribble</span>(</span>
+<span id="cb17-7"><a href=""></a>  <span class="sc">~</span>TP53,      <span class="sc">~</span>Survival,   <span class="sc">~</span>n,</span>
+<span id="cb17-8"><a href=""></a>  <span class="st">"Mutated"</span>,  <span class="st">"Alive"</span>,      <span class="dv">2</span>,</span>
+<span id="cb17-9"><a href=""></a>  <span class="st">"Mutated"</span>,  <span class="st">"Deceased"</span>,   <span class="dv">6</span>,</span>
+<span id="cb17-10"><a href=""></a>  <span class="st">"Wildtype"</span>, <span class="st">"Alive"</span>,      <span class="dv">8</span>,</span>
+<span id="cb17-11"><a href=""></a>  <span class="st">"Wildtype"</span>, <span class="st">"Deceased"</span>,   <span class="dv">4</span></span>
+<span id="cb17-12"><a href=""></a>) <span class="sc">|&gt;</span></span>
+<span id="cb17-13"><a href=""></a>  <span class="fu">mutate</span>(</span>
+<span id="cb17-14"><a href=""></a>    <span class="at">TP53 =</span> <span class="fu">factor</span>(TP53),</span>
+<span id="cb17-15"><a href=""></a>    <span class="at">Survival =</span> <span class="fu">factor</span>(Survival)</span>
+<span id="cb17-16"><a href=""></a>  )</span>
+<span id="cb17-17"><a href=""></a></span>
+<span id="cb17-18"><a href=""></a><span class="co"># View as a contingency table</span></span>
+<span id="cb17-19"><a href=""></a><span class="fu">xtabs</span>(n <span class="sc">~</span> TP53 <span class="sc">+</span> Survival, <span class="at">data =</span> dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Survival
+TP53       Alive Deceased
+  Mutated      2        6
+  Wildtype     8        4</code></pre>
+</div>
+</div>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="log-linear-model-code-example-2">Log-linear model: Code Example</h3>
+<div style="font-size:0.5em">
+<p><strong>Fit independence model</strong></p>
+<ul>
+<li><p>Poisson model is used because counts follow Poisson distribution: <span class="math inline">\(n_{ij}∼Poisson(μ_{ij})\)</span></p></li>
+<li><p>model equation: <span class="math inline">\(\log(\mu_{ij}) = \lambda + \lambda_i^{TP53} + \lambda_j^{Survival}\)</span></p></li>
+<li><p>Model includes the following:</p>
+<ul>
+<li>overall TP53 frequencies</li>
+<li>overall survival frequencies</li>
+<li>no association between TP53 and survival shown in this model</li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href=""></a><span class="co"># Fit log-linear models as Poisson GLMs</span></span>
+<span id="cb19-2"><a href=""></a><span class="co"># Independence (no association)</span></span>
+<span id="cb19-3"><a href=""></a>fit_ind <span class="ot">&lt;-</span> <span class="fu">glm</span>(n <span class="sc">~</span> TP53 <span class="sc">+</span> Survival, <span class="at">family =</span> <span class="fu">poisson</span>(), <span class="at">data =</span> dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="log-linear-model-code-example-3">Log-linear model: Code Example</h3>
+<div style="font-size:0.5em">
+<p><strong>Fit association model</strong></p>
+<ul>
+<li><p>model : <span class="math inline">\(\log(\mu_{ij}) = \lambda + \lambda_i^{TP53} + \lambda_j^{Survival} + \lambda_{ij}^{TP53:Survival}\)</span></p></li>
+<li><p>expected counts can depend on interaction</p></li>
+<li><p>survival probability can differ by TP53 status</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href=""></a><span class="co"># Association (adds interaction)</span></span>
+<span id="cb20-2"><a href=""></a>fit_assoc <span class="ot">&lt;-</span> <span class="fu">glm</span>(n <span class="sc">~</span> TP53 <span class="sc">*</span> Survival, <span class="at">family =</span> <span class="fu">poisson</span>(), <span class="at">data =</span> dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="log-linear-model-code-example-4">Log-linear model: Code Example</h3>
+<div style="font-size:0.5em">
+<ul>
+<li>use likelihood ratio test to compare the two models</li>
+<li>compares two models:
+<ul>
+<li>Model 1: independence</li>
+<li>Model 2: association</li>
+</ul></li>
+</ul>
+<p>This tests:</p>
+<p><span class="math inline">\(H_0\)</span>:TP53 and survival are independent <span class="math inline">\(H_A\)</span>::TP53 and survival are associated</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href=""></a><span class="co"># Likelihood ratio test: does interaction help?</span></span>
+<span id="cb21-2"><a href=""></a><span class="fu">anova</span>(fit_ind, fit_assoc, <span class="at">test =</span> <span class="st">"Chisq"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Analysis of Deviance Table
+
+Model 1: n ~ TP53 + Survival
+Model 2: n ~ TP53 * Survival
+  Resid. Df Resid. Dev Df Deviance Pr(&gt;Chi)  
+1         1     3.4522                       
+2         0     0.0000  1   3.4522  0.06317 .
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<ul>
+<li>measure of how far model is from perfect fit</li>
+<li>likelihood ratio test statistic, shows improvement in fit when interaction is added: 3.4522</li>
+<li>probability of seeing this much improvement if independence were true: <span class="math inline">\(p=0.063\)</span></li>
+</ul>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 id="log-linear-model-code-example-5">Log-linear model: Code Example</h3>
+<div style="font-size:0.5em">
+<ul>
+<li>compare observed vs expected counts</li>
+<li>find:
+<ul>
+<li>expected counts under independence</li>
+<li>expected counts under association</li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href=""></a><span class="co"># Compare observed vs expected counts under each model</span></span>
+<span id="cb23-2"><a href=""></a>dat_out <span class="ot">&lt;-</span> dat <span class="sc">|&gt;</span></span>
+<span id="cb23-3"><a href=""></a>  <span class="fu">mutate</span>(</span>
+<span id="cb23-4"><a href=""></a>    <span class="at">expected_ind   =</span> <span class="fu">fitted</span>(fit_ind),</span>
+<span id="cb23-5"><a href=""></a>    <span class="at">expected_assoc =</span> <span class="fu">fitted</span>(fit_assoc),</span>
+<span id="cb23-6"><a href=""></a>    <span class="at">pearson_resid_ind =</span> <span class="fu">residuals</span>(fit_ind, <span class="at">type =</span> <span class="st">"pearson"</span>)</span>
+<span id="cb23-7"><a href=""></a>  )</span>
+<span id="cb23-8"><a href=""></a></span>
+<span id="cb23-9"><a href=""></a>dat_out</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 6
+  TP53     Survival     n expected_ind expected_assoc pearson_resid_ind
+  &lt;fct&gt;    &lt;fct&gt;    &lt;dbl&gt;        &lt;dbl&gt;          &lt;dbl&gt;             &lt;dbl&gt;
+1 Mutated  Alive        2         4.00           2.00            -1.00 
+2 Mutated  Deceased     6         4.00           6                1.000
+3 Wildtype Alive        8         6.00           8                0.816
+4 Wildtype Deceased     4         6.00           4.00            -0.816</code></pre>
+</div>
+</div>
+<p>Interpretation:</p>
+<ul>
+<li><em>TP53</em> Mutated patients have fewer survivors and more deaths</li>
+<li>wildtype patients have more survivors and fewer deaths</li>
+<li>pattern suggests a possible association between <em>TP53</em> mutation and worse survival</li>
+<li>likelihood ratio test p-value (0.063) indicates that this evidence is not statistically significant at the 0.05 level</li>
 </ul>
 </div>
 </section>
 <section class="slide level2">
 
 
-</section></section>
+</section>
     </div>
   <div class="quarto-auto-generated-content" style="display: none;">
 <div class="footer footer-default">
